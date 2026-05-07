@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────────────────
+# Supercell Explorer — Backend Dockerfile
+# Targets Render.com (also works on Cloud Run, Railway, Fly.io)
+#
+# Why this Dockerfile exists:
+#   arm-pyart requires libhdf5 and libnetcdf4 system libraries to
+#   compile its C extensions. Render's default Python buildpack does
+#   NOT include these, causing:
+#       error: metadata-generation-failed
+#   This Dockerfile installs them before pip runs, so arm-pyart
+#   can build successfully.
+# ─────────────────────────────────────────────────────────────
+
+FROM python:3.11-slim
+
+# ── 1. System dependencies (required by arm-pyart / scipy / numpy) ──
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libhdf5-dev \
+    libnetcdf-dev \
+    libeccodes-dev \
+    libproj-dev \
+    gcc \
+    g++ \
+    gfortran \
+    pkg-config \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── 2. Upgrade pip + build tools ──
+RUN pip install --upgrade pip setuptools wheel
+
+# ── 3. Install base requirements first (they compile fast / have wheels) ──
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ── 4. Install arm-pyart AFTER system deps are in place ──
+#    Pinning to >=1.14 allows pip to pick the newest version with a
+#    pre-built wheel for Python 3.11, avoiding source compilation entirely
+#    on platforms that have wheels. If no wheel is available it will
+#    compile cleanly because libhdf5-dev is now present.
+RUN pip install --no-cache-dir "arm-pyart>=1.14.0"
+
+# ── 5. Copy application code ──
+COPY . .
+
+# ── 6. Expose port and start ──
+ENV PORT=8080
+EXPOSE 8080
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

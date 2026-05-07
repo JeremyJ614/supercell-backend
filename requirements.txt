@@ -1,0 +1,9 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+httpx==0.27.0
+boto3==1.34.69
+numpy==1.26.4
+scipy==1.13.0
+# arm-pyart is installed via Dockerfile after system deps (libhdf5-dev, libnetcdf-dev).
+# DO NOT add arm-pyart here — it requires C compilation and will cause:
+#   "metadata-generation-failed" on Render/Cloud Run without the Dockerfile.

@@ -1,0 +1,17 @@
+# render.yaml — Render.com deployment configuration
+# Place this file in the ROOT of your repo alongside the Dockerfile.
+# Render detects it automatically and uses Docker instead of the buildpack.
+
+services:
+  - type: web
+    name: supercell-api
+    runtime: docker                 # ← tells Render to use Dockerfile, not buildpack
+    dockerfilePath: ./Dockerfile    # relative to repo root
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: "8080"
+    healthCheckPath: /health
+    # Scale to zero when idle (free tier behavior)
+    # First request after idle takes ~10–15s (cold start) — normal
