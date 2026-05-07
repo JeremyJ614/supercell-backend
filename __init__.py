@@ -1,1 +1,0 @@
-# Supercell Explorer Backend
